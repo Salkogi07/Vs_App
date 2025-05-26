@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:vs_app/login_page.dart';
+import 'package:vs_app/signup_page.dart';
+import 'package:vs_app/splash_page.dart';
 
-void main() async {
-
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ .env 파일 로딩
-  await dotenv.load(fileName: '.env'); // 기본: .env
+  // 1) .env 파일 로딩
+  await dotenv.load(fileName: '.env');
 
-  // ✅ Supabase 초기화
+  // 2) Supabase 초기화
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
@@ -25,12 +27,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Vs 프로젝트',
+      title: 'To-Do 프로젝트',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
       routes: {
-
+        '/': (context) => const SplashPage(),
+        '/login': (context) => const LoginPage(),
+        '/signup': (context) => const SignUpPage()
       },
     );
   }
