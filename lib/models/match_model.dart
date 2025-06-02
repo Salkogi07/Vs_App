@@ -1,3 +1,5 @@
+// lib/models/match_model.dart
+
 import 'character.dart';
 
 class MatchModel {
@@ -15,6 +17,7 @@ class MatchModel {
     required this.endAt,
   });
 
+  /// Supabase에서 받아온 Map과 두 캐릭터 객체를 전달받아 MatchModel 생성
   factory MatchModel.fromMap(
       Map<String, dynamic> m, Character ca, Character cb) {
     return MatchModel(

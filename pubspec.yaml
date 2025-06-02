@@ -32,8 +32,8 @@ dependencies:
     sdk: flutter
   supabase_flutter:
   flutter_dotenv:
-  google_sign_in:
   image_picker:
+  image:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
