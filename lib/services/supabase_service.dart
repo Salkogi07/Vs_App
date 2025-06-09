@@ -1,7 +1,7 @@
 // lib/services/supabase_service.dart
 
 import 'dart:io';
-import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/character.dart';
 import '../models/match_model.dart';
@@ -9,80 +9,66 @@ import '../models/match_model.dart';
 class SupabaseService {
   final SupabaseClient _db = Supabase.instance.client;
 
-  /// ──────────────────────────────────────────────────────────────────────
-  /// 1) 이미지 업로드: Mobile(iOS/Android) vs Web 분리 구현
-  ///    1-a) 모바일: File 객체를 받아서 upload()
-  ///    1-b) 웹: Uint8List(bytes) 배열을 받아서 uploadBinary()
-  /// ──────────────────────────────────────────────────────────────────────
-
-  /// 1-a) 모바일 전용: File 객체를 받아 Supabase에 업로드
+  /// 1) Mobile: File → 상대경로(path)만 반환
   Future<String> uploadAvatarMobile(File file) async {
-    final String ext = file.path.split('.').last;
-    final String fileName = DateTime.now().millisecondsSinceEpoch.toString();
-    final String path = 'avatars/$fileName.$ext';
+    final ext      = file.path.split('.').last;
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.$ext';
+    final String path = 'characters/$fileName';
 
-    try {
-      final String fullPath = await _db.storage
-          .from('avatars')
-          .upload(
-        path,
-        file,
-        fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
-      );
-      // Public URL 생성
-      final publicUrl = _db.storage.from('avatars').getPublicUrl(fullPath);
-      return publicUrl;
-    } catch (e) {
-      // 에러 발생 시 그대로 던집니다.
-      rethrow;
-    }
+    // ← upload는 오직 path("characters/xxx.png")만 반환 :contentReference[oaicite:0]{index=0}
+    await _db
+        .storage
+        .from('avatars')
+        .upload(
+      path,
+      file,
+      fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+    );
+
+    return path;
   }
 
-  /// 1-b) 웹 전용: Uint8List 형태 바이트 배열을 받아 Supabase에 업로드
+  /// 2) Web: Uint8List → 상대경로(path)만 반환
   Future<String> uploadAvatarWeb(Uint8List bytes) async {
-    final String fileName = DateTime.now().millisecondsSinceEpoch.toString();
-    final String path = 'avatars/$fileName.png';
-    // 웹에서는 확장자를 일괄적으로 png로 처리하거나,
-    // MIME 타입에 맞추어 직접 지정할 수도 있습니다.
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.png';
+    final String path = 'characters/$fileName';
 
-    try {
-      final String fullPath = await _db.storage
-          .from('avatars')
-          .uploadBinary(
-        path,
-        bytes,
-        fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
-      );
-      final publicUrl = _db.storage.from('avatars').getPublicUrl(fullPath);
-      return publicUrl;
-    } catch (e) {
-      rethrow;
-    }
+    await _db
+        .storage
+        .from('avatars')
+        .uploadBinary(
+      path,
+      bytes,
+      fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+    );
+
+    return path;
   }
 
+  /// 3) 상대경로(path) → public URL 생성 헬퍼
+  String _makePublicUrl(String path) {
+    return _db
+        .storage
+        .from('avatars')
+        .getPublicUrl(path);  // getPublicUrl은 bucket 기준 path만 받습니다 :contentReference[oaicite:1]{index=1}
+  }
 
-  /// ──────────────────────────────────────────────────────────────────────
-  /// 2) 캐릭터 생성: Flutter에서 넘겨준 name, avatarUrl, attributes를
-  ///    characters 테이블에 INSERT
-  /// ──────────────────────────────────────────────────────────────────────
+  /// 4) 캐릭터 생성: 실제 DB에는 public URL을 저장
   Future<void> createCharacter({
     required String name,
-    required String avatarUrl,
+    required String avatarPath,   // path만 받음
     required String attributes,
   }) async {
-    try {
-      await _db.from('characters').insert({
-        'name': name,
-        'avatar_url': avatarUrl,
-        'attributes': attributes,
-      });
-    } catch (e) {
-      rethrow;
-    }
+    final publicUrl = _makePublicUrl(avatarPath);
+    await _db.from('characters').insert({
+      'name'       : name,
+      'avatar_url' : publicUrl,   // → 여기엔 "…/avatars/characters/xxx.png" 한 번만 들어갑니다
+      'attributes' : attributes,
+    });
   }
 
   /// ──────────────────────────────────────────────────────────────────────
-  /// 3) 캐릭터 리스트 조회: keyword가 있으면 ILIKE 조건 추가
+  /// 3) 캐릭터 리스트 조회: name ILIKE '%keyword%' 속성 검색
   /// ──────────────────────────────────────────────────────────────────────
   Future<List<Character>> fetchCharacters({String keyword = ''}) async {
     try {
@@ -91,8 +77,6 @@ class SupabaseService {
       if (keyword.isNotEmpty) {
         query = query.filter('name', 'ilike', '%$keyword%');
       }
-      // 필요한 경우 order()를 호출할 수 있습니다.
-      // query = query.order('created_at', ascending: false);
 
       final List<dynamic> raw = await query;
       return raw
@@ -149,7 +133,7 @@ class SupabaseService {
       // 1) matches 테이블에서 모든 행을 가져옴
       final List<dynamic> rawMatches = await _db.from('matches').select();
 
-      // 2) 필요 캐릭터 ID만 추려서 Set에 모음
+      // 2) 필요 캐릭터 ID만 Set에 모음
       final Set<String> charIds = {};
       for (var m in rawMatches) {
         final mm = m as Map<String, dynamic>;
@@ -174,7 +158,7 @@ class SupabaseService {
           Character.fromMap(c)
       };
 
-      // 6) 최종 MatchModel 리스트 생성
+      // 6) MatchModel 리스트로 변환
       return rawMatches.map((m) {
         final Map<String, dynamic> mm = m as Map<String, dynamic>;
         final ca = charMap[mm['char_a_id'] as String]!;
