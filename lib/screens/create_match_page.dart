@@ -69,54 +69,6 @@ class _CreateMatchPageState extends State<CreateMatchPage> {
     }
   }
 
-  /// 기본 Flutter 다이얼로그를 사용해 날짜와 시간을 순차적으로 선택
-  Future<DateTime?> _pickDateTime({required DateTime? initialDate}) async {
-    // 1) 날짜 선택
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: initialDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-      locale: const Locale('ko'), // 한국어 로케일
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            // Material 3 환경에서는 추가 커스터마이징이 필요할 수 있음
-            colorScheme: ColorScheme.light(
-              primary: Colors.blue, // 헤더 바 색상
-              onPrimary: Colors.white, // 헤더 바 글자 색
-              onSurface: Colors.black, // 달력 UI 글자 색
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (pickedDate == null) return null;
-
-    // 2) 시간 선택
-    final TimeOfDay? pickedTime = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(initialDate ?? DateTime.now()),
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-          child: child!,
-        );
-      },
-    );
-    if (pickedTime == null) return null;
-
-    // 3) 날짜+시간을 합쳐서 반환
-    return DateTime(
-      pickedDate.year,
-      pickedDate.month,
-      pickedDate.day,
-      pickedTime.hour,
-      pickedTime.minute,
-    );
-  }
-
   Future<void> _saveMatch() async {
     if (_selectedA == null || _selectedB == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -165,10 +117,51 @@ class _CreateMatchPageState extends State<CreateMatchPage> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  /// 날짜/시간 선택 헬퍼
+  Future<DateTime?> _pickDateTime({required DateTime? initial}) async {
+    // 1) 날짜 선택
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initial ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      locale: const Locale('ko'),
+    );
+    if (date == null) return null;
+
+    // 2) 시간 선택 (24시간 포맷)
+    final time = await showTimePicker(
+      context: context,
+      initialTime:
+      initial != null ? TimeOfDay.fromDateTime(initial) : TimeOfDay.now(),
+      builder: (c, child) => MediaQuery(
+        data: MediaQuery.of(c).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
+    );
+    if (time == null) return null;
+
+    // 3) 합쳐서 반환
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+  }
+
+  String _format({required DateTime dt}) {
+    final y = dt.year;
+    final m = dt.month.toString().padLeft(2, '0');
+    final d = dt.day.toString().padLeft(2, '0');
+    final h = dt.hour.toString().padLeft(2, '0');
+    final min = dt.minute.toString().padLeft(2, '0');
+    return '$y-$m-$d $h:$min';
   }
 
   @override
@@ -187,7 +180,7 @@ class _CreateMatchPageState extends State<CreateMatchPage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // ─── 캐릭터 검색 및 선택 영역 ──────────────────
+            // 캐릭터 검색
             TextField(
               controller: _searchCtrl,
               decoration: InputDecoration(
@@ -197,13 +190,15 @@ class _CreateMatchPageState extends State<CreateMatchPage> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              onChanged: (val) => _searchCharacters(val),
+              onChanged: _searchCharacters,
             ),
             const SizedBox(height: 12),
+            // 캐릭터 그리드
             Expanded(
               child: GridView.builder(
                 itemCount: _searchResults.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate:
+                const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   childAspectRatio: 0.8,
                   mainAxisSpacing: 12,
@@ -211,32 +206,32 @@ class _CreateMatchPageState extends State<CreateMatchPage> {
                 ),
                 itemBuilder: (ctx, idx) {
                   final c = _searchResults[idx];
+                  final isA = _selectedA?.id == c.id;
+                  final isB = _selectedB?.id == c.id;
                   return GestureDetector(
                     onTap: () {
                       setState(() {
-                        if (_selectedA == null) {
-                          _selectedA = c;
-                        } else if (_selectedB == null && c.id != _selectedA!.id) {
-                          _selectedB = c;
-                        } else if (_selectedA?.id == c.id) {
+                        if (isA) {
                           _selectedA = null;
-                        } else if (_selectedB?.id == c.id) {
+                        } else if (isB) {
                           _selectedB = null;
+                        } else if (_selectedA == null) {
+                          _selectedA = c;
+                        } else if (_selectedB == null) {
+                          _selectedB = c;
+                        } else {
+                          _selectedA = c;
                         }
                       });
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color: (_selectedA != null && _selectedA!.id == c.id) ||
-                            (_selectedB != null && _selectedB!.id == c.id)
-                            ? Colors.blue[100]
-                            : Colors.grey[100],
+                        color:
+                        (isA || isB) ? Colors.blue[100] : Colors.grey[100],
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: (_selectedA != null && _selectedA!.id == c.id) ||
-                              (_selectedB != null && _selectedB!.id == c.id)
-                              ? Colors.blue
-                              : Colors.grey[300]!,
+                          color:
+                          (isA || isB) ? Colors.blue : Colors.grey[300]!,
                           width: 2,
                         ),
                       ),
@@ -250,12 +245,16 @@ class _CreateMatchPageState extends State<CreateMatchPage> {
                           const SizedBox(height: 8),
                           Text(
                             c.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            style:
+                            const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             c.attributes,
-                            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),
@@ -266,7 +265,7 @@ class _CreateMatchPageState extends State<CreateMatchPage> {
             ),
 
             const SizedBox(height: 12),
-            // ─── 선택된 A, B 표시 ─────────────────────────
+            // 선택된 슬롯 표시
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -275,58 +274,41 @@ class _CreateMatchPageState extends State<CreateMatchPage> {
               ],
             ),
             const SizedBox(height: 24),
-
-            // ─── 시작 시간 선택 ──────────────────────────
+            // 시작 시간
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('시작 시간'),
                 TextButton(
                   onPressed: () async {
-                    final picked = await _pickDateTime(initialDate: _startAt);
-                    if (picked != null) {
-                      setState(() {
-                        _startAt = picked;
-                      });
-                    }
+                    final dt = await _pickDateTime(initial: _startAt);
+                    if (dt != null) setState(() => _startAt = dt);
                   },
                   child: Text(
-                    _startAt == null
-                        ? '선택'
-                        : '${_startAt!.year}-${_startAt!.month.toString().padLeft(2, '0')}-${_startAt!.day.toString().padLeft(2, '0')} '
-                        '${_startAt!.hour.toString().padLeft(2, '0')}:${_startAt!.minute.toString().padLeft(2, '0')}',
+                    _startAt != null ? _format(dt: _startAt!) : '선택',
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-
-            // ─── 종료 시간 선택 ──────────────────────────
+            // 종료 시간
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('종료 시간'),
                 TextButton(
                   onPressed: () async {
-                    final picked = await _pickDateTime(initialDate: _endAt);
-                    if (picked != null) {
-                      setState(() {
-                        _endAt = picked;
-                      });
-                    }
+                    final dt = await _pickDateTime(initial: _endAt);
+                    if (dt != null) setState(() => _endAt = dt);
                   },
                   child: Text(
-                    _endAt == null
-                        ? '선택'
-                        : '${_endAt!.year}-${_endAt!.month.toString().padLeft(2, '0')}-${_endAt!.day.toString().padLeft(2, '0')} '
-                        '${_endAt!.hour.toString().padLeft(2, '0')}:${_endAt!.minute.toString().padLeft(2, '0')}',
+                    _endAt != null ? _format(dt: _endAt!) : '선택',
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 24),
-
-            // ─── 저장 버튼 ─────────────────────────────────
+            // 저장 버튼
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
