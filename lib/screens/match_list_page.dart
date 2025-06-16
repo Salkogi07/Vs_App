@@ -1,9 +1,8 @@
-// lib/pages/match_list_page.dart
-
 import 'package:flutter/material.dart';
+import 'package:vs_app/screens/vote_page.dart';
 import '../models/match_model.dart';
 import '../services/supabase_service.dart';
-import 'create_match_page.dart';
+import 'create_match_page.dart'; // 상세 페이지 import
 
 class MatchListPage extends StatefulWidget {
   const MatchListPage({super.key});
@@ -52,31 +51,100 @@ class _MatchListPageState extends State<MatchListPage> {
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (ctx, idx) {
               final m = matches[idx];
-              return Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: NetworkImage(m.a.avatarUrl),
+              return InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => VotePage(),
+                    ),
+                  );
+                },
+                child: Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  title: Text('${m.a.name}  vs  ${m.b.name}'),
-                  subtitle: Text(
-                    '${_fmt(m.startAt)} - ${_fmt(m.endAt)}',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () async {
-                    // 수정 모드로 이동(추후 구현)
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => CreateMatchPage(existing: m),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage('assets/background_image.png'),
+                        fit: BoxFit.cover,
                       ),
-                    );
-                    _load();
-                  },
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // A 아이템 섹션
+                        Column(
+                          children: [
+                            Container(
+                              width: 120,
+                              height: 120,
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.green, width: 4),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: Image.network(
+                                  m.a.avatarUrl,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              width: 120,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              alignment: Alignment.center,
+                              color: Colors.blue,
+                              child: Text(
+                                m.a.name,
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                        // B 아이템 섹션
+                        Column(
+                          children: [
+                            Container(
+                              width: 120,
+                              height: 120,
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.green, width: 4),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: Image.network(
+                                  m.b.avatarUrl,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              width: 120,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              alignment: Alignment.center,
+                              color: Colors.blue,
+                              child: Text(
+                                m.b.name,
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               );
             },
@@ -86,7 +154,9 @@ class _MatchListPageState extends State<MatchListPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await Navigator.push(
-              context, MaterialPageRoute(builder: (_) => const CreateMatchPage()));
+            context,
+            MaterialPageRoute(builder: (_) => const CreateMatchPage()),
+          );
           _load();
         },
         child: const Icon(Icons.add),
