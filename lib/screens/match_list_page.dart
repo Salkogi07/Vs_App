@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:ui'; // Shadow를 사용하기 위해 import
 
 import '../models/match_model.dart';
 import '../services/supabase_service.dart';
+import 'home_page.dart';
 
 class MatchListPage extends StatefulWidget {
   const MatchListPage({super.key});
@@ -18,12 +20,30 @@ class _MatchListPageState extends State<MatchListPage> {
   void initState() {
     super.initState();
     _load();
+    _checkLogin();
   }
 
   void _load() {
     setState(() {
       _future = _srv.fetchMatches();
     });
+  }
+
+  void _checkLogin() async{
+    final user = Supabase.instance.client.auth.currentUser;
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (!mounted) return;
+
+    if (user != null){
+
+    } else {
+      Navigator.pushReplacementNamed(context, '/');
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("로그인하고 접속해 주세요."),)
+      );
+    }
   }
 
   /// 남은 시간을 "X일 Y시간 남음" 형식의 문자열로 변환합니다.

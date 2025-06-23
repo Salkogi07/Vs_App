@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';  // ← 추가
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:vs_app/login_page.dart';
 
 import 'package:vs_app/screens/character_registration_page.dart';
 import 'package:vs_app/screens/create_match_page.dart';
 import 'package:vs_app/screens/home_page.dart';
 import 'package:vs_app/screens/match_list_page.dart';
 import 'package:vs_app/screens/vote_page.dart';
+import 'package:vs_app/signin_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +55,8 @@ class MyApp extends StatelessWidget {
         '/create-match': (context) => const CreateMatchPage(),
         '/match-list': (context) => const MatchListPage(),
         '/vote': (context) => const VotePage(),
+        '/login': (context) => const LoginPage(),
+        '/signin': (context) => const SignUpPage(),
       },
     );
   }

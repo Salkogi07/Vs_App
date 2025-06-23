@@ -2,7 +2,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:vs_app/screens/home_page.dart';
 import '../services/supabase_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CharacterRegistrationPage extends StatefulWidget {
   const CharacterRegistrationPage({super.key});
@@ -13,6 +15,7 @@ class CharacterRegistrationPage extends StatefulWidget {
 
 class _CharacterRegistrationPageState
     extends State<CharacterRegistrationPage> {
+
   final _srv    = SupabaseService();
   final _picker = ImagePicker();
 
@@ -22,6 +25,28 @@ class _CharacterRegistrationPageState
 
   final _nameCtrl = TextEditingController();
   final _attrCtrl = TextEditingController();
+
+  void initState() {
+    super.initState();
+    _checkLogin();
+  }
+
+  void _checkLogin() async{
+    final user = Supabase.instance.client.auth.currentUser;
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (!mounted) return;
+
+    if (user != null){
+
+    } else {
+      Navigator.pushReplacementNamed(context, '/');
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("로그인하고 접속해 주세요."),)
+      );
+    }
+  }
 
   Future<void> _selectImage() async {
     try {
