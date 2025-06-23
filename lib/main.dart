@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';  // ← 추가
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:vs_app/login_page.dart';
 import 'package:vs_app/screens/home_page.dart';
 
 Future<void> main() async {

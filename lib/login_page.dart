@@ -28,6 +28,9 @@ class _LoginPageState extends State<LoginPage> {
 
       if (response.user != null) {
         Navigator.pushReplacementNamed(context, '/');
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("로그인 성공"),)
+        );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
