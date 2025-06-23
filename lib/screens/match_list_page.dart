@@ -96,7 +96,7 @@ class _MatchListPageState extends State<MatchListPage> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           // A 아이템 섹션
-                          Expanded(child: _CharacterItemView(avatarUrl: m.a.avatarUrl)),
+                          Expanded(child: _CharacterItemView(avatarUrl: m.a.avatarUrl, name: m.a.name)),
 
                           // 중앙 VS 및 남은 시간 섹션
                           Expanded(
@@ -125,7 +125,7 @@ class _MatchListPageState extends State<MatchListPage> {
                           ),
 
                           // B 아이템 섹션
-                          Expanded(child: _CharacterItemView(avatarUrl: m.b.avatarUrl)),
+                          Expanded(child: _CharacterItemView(avatarUrl: m.b.avatarUrl, name: m.b.name)),
                         ],
                       ),
                     ),
@@ -147,36 +147,37 @@ class _MatchListPageState extends State<MatchListPage> {
   }
 }
 
-/// 캐릭터 이미지와 프레임을 표시하는 재사용 가능한 위젯
 class _CharacterItemView extends StatelessWidget {
   final String avatarUrl;
+  final String name; // 1. name 파라미터 추가
 
-  const _CharacterItemView({required this.avatarUrl});
+  // 2. 생성자에 name 추가
+  const _CharacterItemView({required this.avatarUrl, required this.name});
 
   @override
   Widget build(BuildContext context) {
-    // AspectRatio를 통해 위젯의 비율을 고정
     return AspectRatio(
       aspectRatio: 45 / 68,
-      // LayoutBuilder를 사용하여 부모 위젯의 크기를 얻음
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // 부모 위젯 너비의 20%를 패딩으로 사용 (이 값을 조절하여 여백 크기 변경)
           final double dynamicPadding = constraints.maxWidth * 0.25;
+          // 이름 텍스트의 폰트 크기를 동적으로 계산
+          final double fontSize = constraints.maxWidth * 0.08;
 
           return Stack(
             fit: StackFit.expand,
             children: [
               // 1. 캐릭터 이미지 (배경)
               Padding(
-                // 계산된 동적 패딩 적용
                 padding: EdgeInsets.all(dynamicPadding),
                 child: ClipRRect(
                   child: Image.network(
                     avatarUrl,
                     fit: BoxFit.cover,
                     loadingBuilder: (context, child, progress) =>
-                    progress == null ? child : const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    progress == null
+                        ? child
+                        : const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                     errorBuilder: (context, error, stackTrace) =>
                     const Icon(Icons.error_outline, color: Colors.white),
                   ),
@@ -186,6 +187,33 @@ class _CharacterItemView extends StatelessWidget {
               Image.asset(
                 'assets/character-item-layer.png',
                 fit: BoxFit.contain,
+              ),
+
+              // 3. 캐릭터 이름 텍스트 (새로 추가)
+              Positioned(
+                // 부모 높이의 약 10% 위에서부터 텍스트를 배치합니다. (값 조절 가능)
+                bottom: constraints.maxHeight * 0.105,
+                // 좌우 여백을 주어 텍스트가 프레임 밖으로 나가지 않게 함
+                left: constraints.maxWidth * 0.1,
+                right: constraints.maxWidth * 0.1,
+                child: Text(
+                  name,
+                  textAlign: TextAlign.center,
+                  maxLines: 1, // 이름이 길 경우 한 줄로 제한
+                  overflow: TextOverflow.ellipsis, // 넘칠 경우 ...으로 표시
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: fontSize, // 동적 폰트 사이즈 적용
+                    shadows: const [
+                      Shadow(
+                        blurRadius: 2.0,
+                        color: Colors.black87,
+                        offset: Offset(1.0, 1.0),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           );
