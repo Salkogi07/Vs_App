@@ -77,7 +77,6 @@ class _MatchListPageState extends State<MatchListPage> {
               return InkWell(
                 borderRadius: BorderRadius.circular(8),
                 onTap: () => Navigator.pushNamed(context, "/vote"),
-                // --- 여기서부터 수정 ---
                 child: Card(
                   elevation: 2,
                   margin: EdgeInsets.zero,
@@ -132,7 +131,6 @@ class _MatchListPageState extends State<MatchListPage> {
                     ),
                   ),
                 ),
-                // --- 여기까지 수정 ---
               );
             },
           );
@@ -149,8 +147,6 @@ class _MatchListPageState extends State<MatchListPage> {
   }
 }
 
-
-// --- 추가된 헬퍼 위젯 ---
 /// 캐릭터 이미지와 프레임을 표시하는 재사용 가능한 위젯
 class _CharacterItemView extends StatelessWidget {
   final String avatarUrl;
