@@ -14,18 +14,12 @@ class HomePage extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           ElevatedButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CharacterRegistrationPage()),
-            ),
+            onPressed: () => Navigator.pushNamed(context, "/character-register"),
             child: const Text('캐릭터 등록'),
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const MatchListPage()),
-            ),
+            onPressed: () => Navigator.pushNamed(context, "/match-list"),
             child: const Text('매치 관리'),
           ),
         ],

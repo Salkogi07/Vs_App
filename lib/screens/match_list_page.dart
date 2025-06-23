@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:vs_app/screens/vote_page.dart';
 import '../models/match_model.dart';
 import '../services/supabase_service.dart';
-import 'create_match_page.dart'; // 상세 페이지 import
 
 class MatchListPage extends StatefulWidget {
   const MatchListPage({super.key});
@@ -53,99 +51,85 @@ class _MatchListPageState extends State<MatchListPage> {
               final m = matches[idx];
               return InkWell(
                 borderRadius: BorderRadius.circular(8),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => VotePage(),
-                    ),
-                  );
-                },
+                onTap: () => Navigator.pushNamed(context, "/vote"),
+                // --- 여기서부터 수정 ---
                 child: Card(
                   elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage('assets/background_image.png'),
-                        fit: BoxFit.cover,
+                  child: AspectRatio(
+                    // 이미지의 가로/세로 비율을 지정합니다. (예: 16:9)
+                    aspectRatio: 2720 / 960,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: AssetImage('assets/match-background_image.png'),
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // A 아이템 섹션
-                        Column(
-                          children: [
-                            Container(
-                              width: 120,
-                              height: 120,
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.green, width: 4),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: Image.network(
-                                  m.a.avatarUrl,
-                                  fit: BoxFit.cover,
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          // A 아이템 섹션
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              FractionallySizedBox(
+                                heightFactor: 1,
+                                child: AspectRatio(
+                                  aspectRatio: 45 / 68,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      image: DecorationImage(
+                                        image: AssetImage('assets/character-item-layer.png'),
+                                        fit: BoxFit.fill,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            ],
+                          ),
+                          // B 아이템 섹션
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center, // 세로 중앙 정렬
+                            children: [
+                              Container(
+                                width: 120,
+                                height: 120,
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.green, width: 4),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: Image.network(
+                                    m.b.avatarUrl,
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Container(
-                              width: 120,
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              alignment: Alignment.center,
-                              color: Colors.blue,
-                              child: Text(
-                                m.a.name,
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          ],
-                        ),
-                        // B 아이템 섹션
-                        Column(
-                          children: [
-                            Container(
-                              width: 120,
-                              height: 120,
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.green, width: 4),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: Image.network(
-                                  m.b.avatarUrl,
-                                  fit: BoxFit.cover,
+                              const SizedBox(height: 8),
+                              Container(
+                                width: 120,
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                alignment: Alignment.center,
+                                color: Colors.blue,
+                                child: Text(
+                                  m.b.name,
+                                  style: const TextStyle(color: Colors.white),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Container(
-                              width: 120,
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              alignment: Alignment.center,
-                              color: Colors.blue,
-                              child: Text(
-                                m.b.name,
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
+                // --- 여기까지 수정 ---
               );
             },
           );
@@ -153,10 +137,7 @@ class _MatchListPageState extends State<MatchListPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CreateMatchPage()),
-          );
+          await Navigator.pushNamed(context, "/create-match");
           _load();
         },
         child: const Icon(Icons.add),
