@@ -6,6 +6,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vs_app/login_page.dart';
 
+import 'package:vs_app/models/match_model.dart';
+
 import 'package:vs_app/screens/character_registration_page.dart';
 import 'package:vs_app/screens/create_match_page.dart';
 import 'package:vs_app/screens/home_page.dart';
@@ -54,7 +56,25 @@ class MyApp extends StatelessWidget {
         '/character-register': (context) => const CharacterRegistrationPage(),
         '/create-match': (context) => const CreateMatchPage(),
         '/match-list': (context) => const MatchListPage(),
-        '/vote': (context) => const VotePage(),
+        '/vote': (context) {
+          // 1. ModalRoute를 통해 arguments를 가져옵니다.
+          final arguments = ModalRoute.of(context)?.settings.arguments;
+
+          // 2. arguments가 MatchModel 타입인지 확인하고, 아니면 에러를 발생시킵니다.
+          if (arguments is MatchModel) {
+            // 3. 올바른 타입이라면 VotePage를 생성하여 반환합니다.
+            return VotePage(match: arguments);
+          } else {
+            // 4. (방어 코드) arguments가 없거나 타입이 다를 경우, 에러 페이지나 이전 페이지로 돌아가는 로직을 추가할 수 있습니다.
+            // 여기서는 간단하게 에러를 표시하는 Scaffold를 반환합니다.
+            return Scaffold(
+              appBar: AppBar(title: const Text('오류')),
+              body: const Center(
+                child: Text('잘못된 접근입니다. 매치 정보가 없습니다.'),
+              ),
+            );
+          }
+        },
         '/login': (context) => const LoginPage(),
         '/signin': (context) => const SignUpPage(),
       },

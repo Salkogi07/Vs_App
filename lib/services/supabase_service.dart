@@ -169,4 +169,48 @@ class SupabaseService {
       );
     }).toList();
   }
+
+  /// 9) 사용자가 특정 매치에 투표했는지 확인 (새로 추가)
+  /// 투표했다면 투표한 캐릭터의 ID를, 아니면 null을 반환합니다.
+  Future<String?> checkIfVoted(String matchId) async {
+    final userId = _db.auth.currentUser?.id;
+    if (userId == null) return null; // 로그인하지 않은 경우
+
+    final result = await _db
+        .from('votes')
+        .select('voted_for_id')
+        .eq('match_id', matchId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+    if (result == null) {
+      return null;
+    }
+    return result['voted_for_id'] as String?;
+  }
+
+  /// 10) 매치에 투표하기 (새로 추가)
+  Future<void> castVote({
+    required String matchId,
+    required String characterId,
+  }) async {
+    final userId = _db.auth.currentUser?.id;
+    if (userId == null) {
+      throw Exception('로그인이 필요합니다.');
+    }
+
+    try {
+      await _db.from('votes').insert({
+        'user_id': userId,
+        'match_id': matchId,
+        'voted_for_id': characterId,
+      });
+    } on PostgrestException catch (e) {
+      // UNIQUE 제약 조건 위반 (이미 투표한 경우)
+      if (e.code == '23505') {
+        throw Exception('이미 투표한 매치입니다.');
+      }
+      rethrow;
+    }
+  }
 }

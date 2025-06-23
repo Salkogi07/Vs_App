@@ -96,7 +96,10 @@ class _MatchListPageState extends State<MatchListPage> {
               final m = matches[idx];
               return InkWell(
                 borderRadius: BorderRadius.circular(8),
-                onTap: () => Navigator.pushNamed(context, "/vote"),
+                onTap: () {
+                  // '/vote' 경로로 이동하면서, arguments로 현재 match 객체 'm'을 전달합니다.
+                  Navigator.pushNamed(context, '/vote', arguments: m);
+                },
                 child: Card(
                   elevation: 2,
                   margin: EdgeInsets.zero,
