@@ -22,8 +22,8 @@ class _CreateMatchPageState extends State<CreateMatchPage> {
   Character? _selectedA;
   Character? _selectedB;
 
-  DateTime? _startAt;
   DateTime? _endAt;
+  String? _winnerId; // 승자의 ID를 저장. null이면 무승부 또는 미정
 
   bool _isLoading = false;
 
@@ -33,8 +33,8 @@ class _CreateMatchPageState extends State<CreateMatchPage> {
     if (widget.existing != null) {
       _selectedA = widget.existing!.a;
       _selectedB = widget.existing!.b;
-      _startAt = widget.existing!.startAt;
       _endAt = widget.existing!.endAt;
+      _winnerId = widget.existing!.winnerId;
     }
     _loadAllCharacters();
   }
@@ -82,15 +82,9 @@ class _CreateMatchPageState extends State<CreateMatchPage> {
       );
       return;
     }
-    if (_startAt == null || _endAt == null) {
+    if (_endAt == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('매치 시작/종료 시간을 선택해주세요.')),
-      );
-      return;
-    }
-    if (_endAt!.isBefore(_startAt!)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('종료 시간은 시작 시간 이후여야 합니다.')),
+        const SnackBar(content: Text('매치 종료 시간을 선택해주세요.')),
       );
       return;
     }
@@ -98,22 +92,23 @@ class _CreateMatchPageState extends State<CreateMatchPage> {
     setState(() => _isLoading = true);
 
     try {
+      // 수정된 createMatch 호출
       await _srv.createMatch(
         charAId: _selectedA!.id,
         charBId: _selectedB!.id,
-        startAt: _startAt!,
         endAt: _endAt!,
+        winnerId: _winnerId, // 생성 시에는 null, 수정 시에는 기존 값 유지
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('매치가 생성되었습니다.')),
+          const SnackBar(content: Text('매치가 저장되었습니다.')),
         );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('매치 생성 중 오류: $e')),
+          SnackBar(content: Text('매치 저장 중 오류: $e')),
         );
       }
     } finally {
@@ -197,8 +192,7 @@ class _CreateMatchPageState extends State<CreateMatchPage> {
             Expanded(
               child: GridView.builder(
                 itemCount: _searchResults.length,
-                gridDelegate:
-                const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   childAspectRatio: 0.8,
                   mainAxisSpacing: 12,
@@ -220,18 +214,21 @@ class _CreateMatchPageState extends State<CreateMatchPage> {
                         } else if (_selectedB == null) {
                           _selectedB = c;
                         } else {
+                          // 이미 두 슬롯이 꽉 찼을 때, A를 교체
                           _selectedA = c;
                         }
                       });
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color:
-                        (isA || isB) ? Colors.blue[100] : Colors.grey[100],
+                        color: (isA || isB)
+                            ? Colors.blue[100]
+                            : Colors.grey[100],
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color:
-                          (isA || isB) ? Colors.blue : Colors.grey[300]!,
+                          color: (isA || isB)
+                              ? Colors.blue
+                              : Colors.grey[300]!,
                           width: 2,
                         ),
                       ),
@@ -245,8 +242,7 @@ class _CreateMatchPageState extends State<CreateMatchPage> {
                           const SizedBox(height: 8),
                           Text(
                             c.name,
-                            style:
-                            const TextStyle(fontWeight: FontWeight.bold),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -273,24 +269,9 @@ class _CreateMatchPageState extends State<CreateMatchPage> {
                 _SlotDisplay(label: 'B 슬롯', character: _selectedB),
               ],
             ),
-            const SizedBox(height: 24),
-            // 시작 시간
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('시작 시간'),
-                TextButton(
-                  onPressed: () async {
-                    final dt = await _pickDateTime(initial: _startAt);
-                    if (dt != null) setState(() => _startAt = dt);
-                  },
-                  child: Text(
-                    _startAt != null ? _format(dt: _startAt!) : '선택',
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 20), // 여백 조정
+            // 승자 선택 UI가 제거되었습니다.
+
             // 종료 시간
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

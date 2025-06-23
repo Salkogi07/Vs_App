@@ -9,6 +9,7 @@ import '../models/match_model.dart';
 class SupabaseService {
   final SupabaseClient _db = Supabase.instance.client;
 
+  // ... uploadAvatarMobile, uploadAvatarWeb, _makePublicUrl, createCharacter, fetchCharacters, getCharacterById 메서드는 변경 없습니다 ...
   /// 1) 모바일: File → 상대경로(path)만 반환
   Future<String> uploadAvatarMobile(File file) async {
     final ext      = file.path.split('.').last;
@@ -49,7 +50,7 @@ class SupabaseService {
     return _db
         .storage
         .from('avatars')
-        .getPublicUrl(path);  // 퍼블릭 URL 생성 :contentReference[oaicite:0]{index=0}
+        .getPublicUrl(path);
   }
 
   /// 4) 캐릭터 생성: avatarPath(path) → public URL 생성 후 저장
@@ -89,12 +90,12 @@ class SupabaseService {
     return Character.fromMap(raw as Map<String, dynamic>);
   }
 
-  /// 7) 매치 생성: UUID 패턴(RegExp)으로 순수 UUID만 뽑아서 삽입
+  /// 7) 매치 생성: UUID 패턴(RegExp)으로 순수 UUID만 뽑아서 삽입 (수정됨)
   Future<void> createMatch({
     required String charAId,
     required String charBId,
-    required DateTime startAt,
     required DateTime endAt,
+    String? winnerId, // 승자 ID, null일 수 있음
   }) async {
     // UUID 형식 매칭(RegExp)
     final uuidReg = RegExp(
@@ -112,11 +113,21 @@ class SupabaseService {
     final cleanA = aMatch.group(0)!;
     final cleanB = bMatch.group(0)!;
 
+    // winnerId가 있다면 마찬가지로 순수 UUID 추출
+    String? cleanWinnerId;
+    if(winnerId != null) {
+      final winnerMatch = uuidReg.firstMatch(winnerId);
+      if (winnerMatch == null) {
+        throw FormatException('잘못된 승자 ID 형식: $winnerId');
+      }
+      cleanWinnerId = winnerMatch.group(0);
+    }
+
     await _db.from('matches').insert({
       'char_a_id': cleanA,
       'char_b_id': cleanB,
-      'start_at' : startAt.toUtc().toIso8601String(),
       'end_at'   : endAt.toUtc().toIso8601String(),
+      'winner_id': cleanWinnerId, // winner_id 추가
     });
   }
 
@@ -138,7 +149,7 @@ class SupabaseService {
     final rawChars = await _db
         .from('characters')
         .select()
-        .inFilter('id', charIds.toList())  // inFilter 사용 :contentReference[oaicite:1]{index=1}
+        .inFilter('id', charIds.toList())
     as List<dynamic>;
 
     // ④ Map<id, Character> 로 변환
